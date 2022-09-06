@@ -1,5 +1,8 @@
-class Book {
+import 'package:floor/floor.dart';
 
+@entity
+class Book {
+  @primaryKey
   int? id;
   String name;
   String author;

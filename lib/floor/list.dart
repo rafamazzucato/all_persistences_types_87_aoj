@@ -1,6 +1,9 @@
 import 'package:all_persistences_types/floor/add.dart';
+import 'package:all_persistences_types/floor/daos/BookDao.dart';
 import 'package:all_persistences_types/floor/models/Book.dart';
 import 'package:flutter/material.dart';
+
+import 'package:all_persistences_types/floor/database/appDatabase.dart';
 
 class ListFloorWidget extends StatefulWidget {
   const ListFloorWidget({Key? key}) : super(key: key);
@@ -12,25 +15,52 @@ class ListFloorWidget extends StatefulWidget {
 }
 
 class _ListFloorWidgetState extends State<ListFloorWidget> {
+  late BookDao dao;
   List<Book> books = [];
 
   @override
   void initState() {
     super.initState();
-    
+
     getAll();
   }
 
   getAll() async {
-    
+    final database = await $FloorAppDatabase
+        .databaseBuilder("app_floor_database.db")
+        .build();
+
+    dao = database.bookDao;
+    if (dao != null) {
+      final result = await dao.findAll();
+      if (result.isNotEmpty) {
+        setState(() {
+          books = result;
+        });
+      }
+    }
   }
 
-  insert() async {
-    
+  insert(Book book) async {
+    if (dao != null) {
+      final id = await dao.insertBook(book);
+      if (id > 0) {
+        book.id = id;
+        setState(() {
+          books.add(book);
+        });
+      }
+    }
   }
 
   delete(int index) async {
-    
+    if (dao != null) {
+      final book = books[index];
+      await dao.deleteBook(book);
+      setState(() {
+        books.removeAt(index);
+      });
+    }
   }
 
   @override
@@ -45,7 +75,7 @@ class _ListFloorWidgetState extends State<ListFloorWidget> {
                         MaterialPageRoute(builder: (context) => AddBook()))
                     .then((book) {
                   setState(() {
-                    //insert();
+                    insert(book);
                   });
                 });
               },
